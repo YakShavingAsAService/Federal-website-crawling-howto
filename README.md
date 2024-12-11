@@ -1,2 +1,3 @@
 # CDC-website-crawl
-Crawling the CDC website to build an archive
+
+Currently testng small-scale CDC website crawls. Please create an issue if you have concerns about robot behavior.
