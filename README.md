@@ -131,6 +131,10 @@ That gave me a scope that looks like this:
   </property>
  </bean>
 ```
+
+I ran my job nights and weekends, where the impact on the CDC's webservers would be minimal.
+
+For what it's worth, the Heritrix user manual outlines a few ways to add seeds to a crawl that has already been started, but I never found a way to make that work.
  
 ### Examining warc files
 
