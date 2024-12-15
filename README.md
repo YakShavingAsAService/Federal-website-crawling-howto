@@ -1,31 +1,32 @@
-# CDC-website-crawl
+# Archiving U.S. Federal government websites
 
-As the new US presidental term approaches, I've been looking into archiving the CDC website. I wrote a discovery tool
-based on the CDC's sitemaps.xml to discover URLs, and submitted those to the people at the End of Term project: https://eotarchive.org/.
-You can do bulk nominations by submitting a PR for a new seed file at their github repo, at https://github.com/end-of-term/eot2024, or by emailing them directly. 
+Are you eagerly awaiting the 2025 presidental transition? Me neither! Much as climate scientists worked to preserve federal datasets before the 2017 transition, I want to preserve vaccine and other information on the CDC website. That's led me to research ways to preserve federal website content. 
 
-End of Term is an awesome project, but nomination *is* not a guarantee that your submitted URLs will get crawled. I wanted to do my own crawl. This repo is a
-set of notes based on my experiences with getting this tooling up and running, along with a few helper scripts I have written.
+Here's what I came up with:
 
-# Crawler tooling
+- the Internet Archive's Wayback Machine at: http://web.archive.org/. This is a fabulous resource that you probably already know about and have used. But, if you're an individual user, you're archiving a single URL at a time. So, I plan to archive a few high-profile pages, but it's not a practical solution if you want to archive a lot of material.
+- The End of Term project at https://eotarchive.org/ is something I just learned about recently. It's a collaboration between the Internet Archive and some libraries and NGOs to archive the fedweb before and after presidental term changes. You can submit nominations for inclusion in their crawls at their website, or submit bulk nominations at their github repo, at https://github.com/end-of-term/eot2024, or by emailing them directly. I'm told that if you are targetting a crawl before the 2025 transition, you'll need to submit before January 5, 2025. I have submitted a couple of very large files for the CDC's website to this project.
+- Roll Your Own crawls. A nomination to the End of Term project doesn't guarantee that your URLs will get crawled. And, they're not set up to archive some specific kinds of content. I started looking into how I could do my own crawls. A big drawback to this approach: when the End of Term project does a crawl, the provenenace of the materials it generates is crystal clear. While the End of Term project very much wants your seed nominations, they can't accept your crawled files, because of the obvious provenance issues involved. The same may be true for other intended downstream consumers of your crawled files. It might make more sense to try to work through established, credible organizations. Are there any other ongoing efforts in your subject area you can join?
 
-As anyone who has ever used the Internet's Archive Wayback Machine knows, web archiving has been around
-for a long time. There are various tools available, but I settled on using the Internet Archive's tool,
-Heritrix (https://github.com/internetarchive/heritrix3).
+What follows are notes about the tooling around running your own crawls, plus a few helper scripts that came in handy for both the End of Term nomination process and for my own crawls. I hope these are useful for people looking into preserving other parts of the fedweb.
+
+# Crawler tooling and hardware
+
+Web archiving has been around for a long time. There's a mature supporting file format, warc, and a surrounding ecosystem for tools: https://wiki.archiveteam.org/index.php/The_WARC_Ecosystem. I settled on using the Internet Archive's well-established tool, Heritrix (https://github.com/internetarchive/heritrix3).
 
 For my server setup, I'm running Ubuntu 24.04 server on a Xeon-D chip with 16GB of RAM and 16TB (!!!) of HDD. My dedicated cloud instance comes with unmetered bandwidth.
 
 ## Heritrix features
 
-TODO: filetypes. ALSO missing data from data.cdc.gov TODO.
+TODO: describe supported/unsupported content types.
 
 ## Heritrix quickstart
 
 ### Installation
 
-Heritrix is well documented. You can find installation instructions are at https://heritrix.readthedocs.io/en/latest/getting-started.html.
+Heritrix is well documented. You can find installation instructions at https://heritrix.readthedocs.io/en/latest/getting-started.html.
 
-I installed my crawler on an Ubuntu 24.04 server. I installed Heritrix 3.5 from https://github.com/internetarchive/heritrix3/releases.
+I began by installing Heritrix 3.5 from https://github.com/internetarchive/heritrix3/releases.
 Heritrix needs a Java JRE, and Heritrix 3.5 requires version 17 of the JRE. I installed that with my package manager: `sudo apt install openjdk-17-jre`.
 
 Next I set my `JAVA_HOME` and `HERITRIX_HOME` environment variables. I upped the memory allocated to java to 1GB: `export JAVA_OPTS=-Xmx1024M.`
@@ -34,21 +35,21 @@ I set execute persmission on `chmod u+x $HERITRIX_HOME/bin/heritrix`
 
 Then I launched Heritrix: `$HERITRIX_HOME/bin/heritrix -a admin:admin`
 
-I am running the crawls on a headless server, so I need to tunnel the Heritrix control pane to my desktop's browser. )If you are running
-on a full desktop, you can skip this step.) I tunneled the control pane via ssh: `ssh -p MY_SERVER_SSH_PORT -L localhost:9999:localhost:8443 MY_SERVER_USERNAME@MY_SERVER -N`
+I am running the crawls on a headless server, so I need to tunnel the Heritrix control pane to my desktop's browser. If you are running
+on a full desktop, you can skip this step. I tunneled the control pane via ssh: `ssh -p MY_SERVER_SSH_PORT -L localhost:9999:localhost:8443 MY_SERVER_USERNAME@MY_SERVER -N`
 Now I can load the Heritrix control pane on my desktop's browser via https://localhost:9999.
 
-OK, now we've loaded up https://localhost:9999 in our browser. But wait -- all I see is garbage on the web page! You'll need to configure a SSL certificate error
-exception first. This turned out to be not-straightforward in the most recent of Firefox, so I just used Konquerer instead. Once the exception is configured,
-the control pane works.
+OK, now we've loaded up https://localhost:9999 in our browser. But wait, all I see is garbage on the web page! You'll need to configure a SSL certificate error
+exception first. This turned out to be not-straightforward in the most recent version of Firefox, so I just used Konquerer instead. Once the exception is configured,
+a normal control pane loads.
 
 ### First crawl
   
-To run crawls, you need two things: some seeds, and a valid configuration file, called crawler-beans.cxml. A default one comes with the installation, but you'll
+To run crawls, you need two things: some seed URLs, and a valid configuration file, called crawler-beans.cxml. A default one comes with the installation, but you'll
 still need to make a couple of changes before the first crawl.
 
-Create a new job, then go to the configuration tab to see crawler-beans.cxml. The first thing to change is metadata.operatorContactUrl in the simpleOverrides section and change its
-value to a url associated with you. Next, find the property key seeds.textSource.value in the longerOverrides section and add in a few test URLs under the seeds.textSource.value property.
+Create a new job, then go to the configuration tab to see crawler-beans.cxml. The first thing to change is metadata.operatorContactUrl in the simpleOverrides section; change its
+value to a url associated with your project. Next, find the property key seeds.textSource.value in the longerOverrides section and add in a few test URLs under the seeds.textSource.value property.
 Save changes, then go back to the job page and press "build." If there are no errors to fix, press launch. To actually initiate the crawl, press unpause. Now you can monitor the
 crawl with the reports on the right side. When you're done, hit terminate and then teardown.
 
@@ -62,14 +63,14 @@ First, I wanted to get my seeds from an external file, not from crawler-beans.cx
  - I commented out the entire org.archive.modules.seeds.TextSeedModule with the ConfigString in the seeds section
  - I un-commented the alternative seeds section just below, the version of the modules.seeds.TextSeedModule that uses the ConfigFile. I set the value of the path property to my seeds file.
    
-My second set of changes had to do with the crawl scope. Heritrix's documentation is here: https://heritrix.readthedocs.io/en/latest/configuring-jobs.html#crawl-scope. The scope section is a
+My second set of changes had to do with the crawl scope. Heritrix's documentation on crawl scope is here: https://heritrix.readthedocs.io/en/latest/configuring-jobs.html#crawl-scope. The scope section is a
 list of all the conditions that ACCEPT or REJECT a URL for crawling. You go through the scope chain, and the last disposition wins.
 
 What I wanted was to crawl all my seed files, plus links on the seed URLs that are at most one hop away, *if* those one-hop-away links are at cdc.gov, fda.gov, or nih.gov.
 
 It's straightforward to configure maxHops in the TooManyHopsDecideRule for a maximum of one hop, but it's a little more work to restrict the one-hop links to specific
 domains. Heritrix uses a hostname prefix called a surt. Sort of like an IP prefix, it lets you specify top level domains, domains, and hosts, which you can use for scope matches.
-The surts that I want to ACCEPT are in SurtPrefixedDecideRule in acceptSurts, and here's what that section of my crawler-beans.cxml ooks like:
+The surts that I want to ACCEPT are in SurtPrefixedDecideRule in acceptSurts, and here's what that section of my crawler-beans.cxml looks like:
 
 ```xml
 <bean id="acceptSurts" class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
@@ -133,22 +134,17 @@ That gave me a scope that looks like this:
   </property>
  </bean>
 ```
+That's it for my configuration changes.
 
 ### Running a crawl
 
-I ran my job nights and weekends, where the impact on the CDC's webservers would be minimal.
+I ran my job nights and weekends, where the impact on the CDC's webservers would be minimal. You can use pause/unpause to control this. Also, Heritrix has a handy checkpointing feature. This allows you to preserve mid-crawl state, terminate the crawl, then re-launch with the saved state. You can read about it here: https://github.com/internetarchive/heritrix3/wiki/Checkpointing.
 
-I got hung up trying to add seeds mid-crawl according to this doc: https://github.com/internetarchive/heritrix3/wiki/Adding-URIs-mid-crawl. But I somehow missed that important first line, which notes that this is only relevant for a version of Heritrix that I'm not running. I got some advice about how to do this in Heritrix 3.5 in the issue tracker at https://github.com/internetarchive/heritrix3/issues/635, but haven't tried it.
-
-TODO: CHECKPOINTING
+I got hung up trying to add seeds mid-crawl according to this doc: https://github.com/internetarchive/heritrix3/wiki/Adding-URIs-mid-crawl. But I somehow missed that very important first line, the one that notes that this is only relevant for a version of Heritrix that I'm not running. I got some advice about how to do this in Heritrix 3.5 in the issue tracker at https://github.com/internetarchive/heritrix3/issues/635, but haven't tried it yet.
 
 ### My real world statistics (so far)
 
-I started with about 46,000 URLs from the CDC's sitemap; these are my seeds for the crawl. As I said, I'm adding in links from those seed files that are (1) a single hop off a see file, and that (2) leads to an endpoint in cdc.gov, fda.gov, or nih.gov. That comes to about 150,000 additional URLs. However, that's an upper bound: I didn't filter out links that are in the inital seeds list, and I didn't filter out multiple links that point to the same endpoint. TODO: INVALID PROTOCOLS
-
-Over 12 hours, I have crawled slightly under 10,000 URLs. The compressed warc files are tiny (76M), but at this point it is only crawling easily-compressed HTML files. As it finishes the seeds and starts following links to non-HTML content, I expect this number to get a *lot* larger.
-
-Before I ran my real crawl, I did a mini-crawl of 5% of my seeds to get a feel for how much disk I was going to consume for the entire job. My back-of-the-envelope says it will be well under 2TB, and maybe under 1TB.
+In my current configuration, I crawl about 10,000 URLs in 12 hours. This generates a compressed warc file of around 350 MB. Keep in mind this number is dependent on the type of content you're crawling. I'm collecting many HTML files, which compress nicely. Other content might run slower and take up more disk. I suggest running a test mini-crawl of your seeds and extrapolating your resource needs from there.
 
 ### Examining warc files
 
@@ -163,27 +159,37 @@ Second, you'll want to extract file from warcs, and you can do that with the war
 
 This will read whatever warc files are in the same directory and extract them into a tree under the output directory.
 
+If you want to examine warc files in a browser, there's https://replayweb.page/.
+
+### Next steps
+
+Heritrix won't pick up the data files at data.cdc.gov. I'll need to write a web scraping tool to do that. It's currently TBD.
+
+I'll need to index my warc files. It too is currently TBD.
+
+It sure would be nice to have a Wayback Machine style interface to the warc files. But I haven't even begun to think about how to do that.
+
 # My helper tools
+
+I wrote several Python tools to help with seed files. They are all MIT-licensed. Modify and use as you see fit.
 
 ## Building the seed list
 
-I needed to get a list of CDC URLs to use for my seed files, so I wrote a script to get location entries out of the CDC sitemaps.xml file. https://www.cdc.gov/sitemaps.xml just pointed at any empty page, but I found a Sitemap link at the bottom of https://www.cdc.gov/robots.txt to https://www.cdc.gov/wcms-auto-sitemap-index.xml. That in turn pointed to a long list of inner sitemaps. My script parses through all these to come up with a list of 46,000 seed files.
+I needed to get a list of CDC URLs to use for my seed files, so I wrote a script, parse_sitemaps.py, to get location entries out of the CDC sitemaps.xml file. https://www.cdc.gov/sitemaps.xml just pointed at an empty page, but I found a sitemap link at the bottom of https://www.cdc.gov/robots.txt that pointed to https://www.cdc.gov/wcms-auto-sitemap-index.xml. That in turn pointed to a long list of inner sitemaps. My script parses through all these to come up with a list of seed files.
 
-My script is here: XXXX. My output file is here: XXXX.
+My sitemap-parsing script is here: https://github.com/YakShavingAsAService/CDC-website-crawl/blob/main/parse_sitemaps.py
 
-## Understanding links in seed files
+## Understanding the links in the seed files
 
-Those seed files are HTML files that have links to other content -- other HTML files that aren't listed in the sitemaps, both in the cdc.gov domain and out of it, PDF content, Microsoft Office format files, image files, and so on. I wanted to understand what these were, so I wrote another script to use the data generated by the first script and return a list of all the links in each one. I stored the results in a pickle file, which is a disk persistence mechanism in Python. These are first-hop links only.
+Those seed files are HTML files that have links to other content: other HTML files, links in the cdc.gov domain and out of it, PDF content, Microsoft Office format files, image files, and so on. I wanted to understand what these were, so I wrote another script to use the data generated by the first script and find the links in those files and break down each one by source, the time the link was found, the link, the protocol specified, the host component of the link, the path component of the link, and the suffix of the link. I stored the results in a pickle file, which is a disk persistence mechanism in Python. These are first-hop links only.
 
-My link enumeration script is here: XXX. My output file in Python's pickle format is here: ZZZZ. I wrote another script that filter's the previous tool's output to create a pickle file of only the unique endpoints in the .gov domain. It also normalizes and relative HREFs into absolute HREFs. That normalizing script is at XXX2 and the output pickle file is at ZZZ2.
+My link enumeration script is here: https://github.com/YakShavingAsAService/CDC-website-crawl/blob/main/get_links_at_urls.py. 
 
-To understand the different types of content types in the endpoints, I wrote this tool: AAAAA. It takes the XXX link enumeration scripts output pickle file and writes a statistic summary to the screen.
-
-How many links in addition to the initial seed files are in scope for my project? Recall that I have defined in-scope as (1) a single hop off a see file, that (2) leads to an endpoint in cdc.gov, fda.gov, or nih.gov. 
+I wrote another script that filters the previous tool's output to create a pickle file of only the unique endpoints in the .gov domain. It also normalizes and relative HREFs into absolute HREFs. That normalizing script is at https://github.com/YakShavingAsAService/CDC-website-crawl/blob/main/normalize_enumerated_links.py.
 
 # Issues and questions
 
-I'm just learning about web archiving, and I'm sure there are things I've gotten wrong in this writeup. If so feel tree to file an issue against this repo. If you have questions, so ahead and use the issue tracker for that as well. I'll help if I can.
+I'm just learning about web archiving, and I'm sure there are things I've gotten wrong in this writeup. If so feel free to file an issue against this repo. If you have other comments or questions that don't belong in the issue tracker, check my github profile to see how to contact me.
 
 
 
