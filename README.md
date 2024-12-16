@@ -40,8 +40,8 @@ on a full desktop, you can skip this step. I tunneled the control pane via ssh: 
 Now I can load the Heritrix control pane on my desktop's browser via https://localhost:9999.
 
 OK, now we've loaded up https://localhost:9999 in our browser. But wait, all I see is garbage on the web page! You'll need to configure a SSL certificate error
-exception first. This turned out to be not-straightforward in the most recent version of Firefox, so I just used Konquerer instead. Once the exception is configured,
-a normal control pane loads.
+exception first. In Firefox, go to about:preferences#privacy and scroll down to the Certificates section. Click "View Certificates" and pick the Servers tab, then click Add Exception at
+the bottom. Put "https://localhost:9999" in the location field, then click "Get Certificate." Once the exception is configured, a normal control pane loads.
 
 ### First crawl
   
