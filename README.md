@@ -187,6 +187,25 @@ My link enumeration script is here: https://github.com/YakShavingAsAService/CDC-
 
 I wrote another script that filters the previous tool's output to create a pickle file of only the unique endpoints in the .gov domain. It also normalizes and relative HREFs into absolute HREFs. That normalizing script is at https://github.com/YakShavingAsAService/CDC-website-crawl/blob/main/normalize_enumerated_links.py.
 
+## Archiving datasets
+
+Heritrix doesn't handle dataset downloads, so I wrote my own script to archive the datasets hosted at data.cdc.gov. After I processed the sitemap to get the individual dataset URLs from the sitemap, I wrote a Selenium 4 script to retrieve the underlying .csv files. That's [cdc_data_download.py.](https://github.com/YakShavingAsAService/Federal-website-crawling-howto/blob/main/cdc_data_download.py)
+
+That worked for most, but not all, the datasets, especially the larger ones. In those cases, I found it better to go directly to the Socrata API endpoints and retrieve the datasets there. Fortunately, there's a great Python package called [retriever](https://github.com/weecology/retriever/tree/main) that made this very easy. I probably should have just used retriever from the beginning.
+
+```python
+import retriever as rt
+from pprint import pprint
+
+ids = ['vbim-akqf' ] # example id
+
+for id in ids:
+    dataset = 'socrata-%s' % id
+    resource = rt.find_socrata_dataset_by_id(id)
+    pprint(resource)
+    rt.download(dataset)
+```
+
 # Issues and questions
 
 I'm just learning about web archiving, and I'm sure there are things I've gotten wrong in this writeup. If so feel free to file an issue against this repo. If you have other comments or questions that don't belong in the issue tracker, check my github profile to see how to contact me.
