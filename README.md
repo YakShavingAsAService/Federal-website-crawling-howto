@@ -140,7 +140,7 @@ That's it for my configuration changes.
 
 I ran my job nights and weekends, where the impact on the CDC's webservers would be minimal. You can use pause/unpause to control this. Also, Heritrix has a handy checkpointing feature. This allows you to preserve mid-crawl state, terminate the crawl, then re-launch with the saved state. You can read about it here: https://github.com/internetarchive/heritrix3/wiki/Checkpointing.
 
-I got hung up trying to add seeds mid-crawl according to this doc: https://github.com/internetarchive/heritrix3/wiki/Adding-URIs-mid-crawl. But I somehow missed that very important first line, the one that notes that this is only relevant for a version of Heritrix that I'm not running. I got some advice about how to do this in Heritrix 3.5 in the issue tracker at https://github.com/internetarchive/heritrix3/issues/635, but haven't tried it yet.
+In Heritrix 3.x, you can add seeds to a running job by putting a file of URLs in the job's action directory. The file needs to have a .seeds suffix. More about that here: https://heritrix.readthedocs.io/en/latest/operating.html#action-directory.
 
 ### My real world statistics (so far)
 
@@ -151,7 +151,7 @@ In my current configuration, I crawl about 10,000 URLs in 12 hours. This generat
 If you go to $HERITRIX_HOME/jobs, you see a directory with your job name and its associated crawl data. In there there's a directory called warc, and that's where your archived files are collected. 
 How do I do I look inside them?
 
-First, there's a useful collection of python tools to work with warc files at https://github.com/internetarchive/warctools. I use ```warcdump <warcfile>``` all the time to look at each archived file's metadata.
+First, there's a useful collection of python tools to work with warc files at https://github.com/internetarchive/warctools. I use ```warcdump <warcfile>``` all the time to look at each archived file's metadata. I also wrote a minimalist script to look at contained files in warcfiles in directories: https://github.com/YakShavingAsAService/Federal-website-crawling-howto/blob/main/warc_reader.py.
 
 Second, you'll want to extract file from warcs, and you can do that with the warc_extractor tool from https://github.com/recrm/ArchiveTools/tree/master. Here's an example:
 
@@ -205,6 +205,10 @@ for id in ids:
     pprint(resource)
     rt.download(dataset)
 ```
+
+## Miscellaneous
+
+I wrote a mnimalist script to list basic file crawl information in a group of warcfiles in a directory. It's here: I also wrote a minimalist script to look at contained files in warcfiles in directories: https://github.com/YakShavingAsAService/Federal-website-crawling-howto/blob/main/warc_reader.py.
 
 # Issues and questions
 
